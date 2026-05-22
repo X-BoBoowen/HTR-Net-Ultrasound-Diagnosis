@@ -1,7 +1,5 @@
 # HTR-Net: Multi-Dimensional Fusion Framework for Ultrasound Tumor Diagnosis and Segmentation
 
-**Under Review at IEEE BIBM 2026** | [github.com/X-BoBoowen/HTR-Net-Ultrasound-Diagnosis](https://github.com/X-BoBoowen/HTR-Net-Ultrasound-Diagnosis)
-
 An end-to-end ultrasound image tumor diagnosis system addressing three core challenges: blurred lesion boundaries, high miss rates for small tumors, and underutilization of clinical biomarkers. HTR-Net integrates improved YOLOv11 semantic segmentation, EfficientNet-based classification, and a GDX ensemble learning model for multi-dimensional fusion of imaging and clinical data.
 
 ## Method Overview
