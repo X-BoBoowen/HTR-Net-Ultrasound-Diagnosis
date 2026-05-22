@@ -42,7 +42,6 @@ predict_data/
 all-data/
 train/
 val/
-output/
 predictimage/
 mydata/
 
@@ -50,7 +49,7 @@ mydata/
 *.docx
 *.pptx
 
-# ===== Third-party Library Source (use pip install) =====
+# ===== Third-party Library Source (use pip install instead) =====
 ultralytics-main-cancer/ultralytics/
 ultralytics-main-cancer/docs/
 ultralytics-main-cancer/examples/
@@ -58,10 +57,11 @@ ultralytics-main-cancer/tests/
 ultralytics-main-cancer/docker/
 ultralytics-main-cancer/.github/
 
-# ===== Prediction Output Images (too many) =====
+# ===== Prediction Output Images =====
 预测结果图/
+prediction_outputs/
 
-# ===== Ultralytics Project Files (not user code) =====
+# ===== Ultralytics Boilerplate (not user code) =====
 ultralytics-main-cancer/.gitignore
 ultralytics-main-cancer/output.jpg
 ultralytics-main-cancer/.dockerignore

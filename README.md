@@ -1,160 +1,118 @@
-# 多维度融合的超声图像肿瘤智能诊断系统
+# HTR-Net: Multi-Dimensional Fusion Framework for Ultrasound Tumor Diagnosis and Segmentation
 
-基于超声图像和临床数据的多模态融合肿瘤智能诊断系统，整合深度学习图像分类、YOLO语义分割和XGBoost临床特征分析的智能辅助诊断方案。
+**Under Review at IEEE BIBM 2026** | [github.com/X-BoBoowen/HTR-Net-Ultrasound-Diagnosis](https://github.com/X-BoBoowen/HTR-Net-Ultrasound-Diagnosis)
 
-## 项目结构
+An end-to-end ultrasound image tumor diagnosis system addressing three core challenges: blurred lesion boundaries, high miss rates for small tumors, and underutilization of clinical biomarkers. HTR-Net integrates improved YOLOv11 semantic segmentation, EfficientNet-based classification, and a GDX ensemble learning model for multi-dimensional fusion of imaging and clinical data.
+
+## Method Overview
+
+- **Stage 1** — Improved YOLOv11 with C3k2_DFF (Dual-Domain Feature Fusion) and IEMA attention for precise lesion localization → **85.7% mIoU**
+- **Stage 2** — TR-Net based on EfficientNet-B0 with transfer learning for binary malignancy classification → **~85% accuracy**
+- **Stage 3** — GDX ensemble model (XGBoost + GradientBoosting stacking + Random Forest meta-classifier) fusing clinical features → **AUC 0.88**
+
+## Repository Structure
 
 ```
-├── requirements.txt          # Python 依赖
-├── README.md                 # 项目说明
-├── .gitignore                # Git 忽略规则
+├── Test9_efficientNet/               # Image classification + XGBoost + fusion + utilities
+│   ├── model.py                      #   EfficientNet B0–B7 architecture
+│   ├── train.py                      #   EfficientNet training script
+│   ├── utils.py                      #   Data loading, training/eval utilities
+│   ├── predict.py                    #   Batch image prediction
+│   ├── new-predict.py               #   Prediction with label correction
+│   ├── pth-onnx.py                  #   PyTorch → ONNX export
+│   ├── XGBOOST.py                    #   Bayesian-optimized XGBoost training + visualization
+│   ├── XGBOOST-predict.py           #   XGBoost inference with preprocessing pipeline
+│   ├── data_confuse.py              #   Multi-modal fusion (confidence-weighted + RF)
+│   ├── confuse.py                   #   Confusion matrix visualization
+│   ├── data_relavate.py             #   Feature correlation & violin plot analysis
+│   ├── excle_process.py             #   Excel data matching
+│   └── image_require.py            #   Video frame extraction
 │
-├── efficientnet/             # 模态一：超声图像分类 (EfficientNet-B0)
-│   ├── model.py              #   EfficientNet B0-B7 模型定义
-│   ├── train.py              #   训练脚本
-│   ├── utils.py              #   数据加载、训练/评估工具
-│   ├── predict.py            #   批量图片预测
-│   └── pth-onnx.py           #   PyTorch 转 ONNX 导出
+├── ultralytics-main-cancer/          # YOLOv11 segmentation + post-processing
+│   ├── train.py                      #   YOLO segmentation training
+│   ├── predict.py                    #   YOLO inference
+│   ├── area_calculate.py            #   Lesion area measurement
+│   ├── length_calculate.py          #   Skeleton-based lesion length
+│   ├── width_calculate.py           #   PCA-based lesion width
+│   ├── data_exter.py                #   HSV-based mask extraction
+│   ├── lianghua.py                  #   Interactive HSV threshold analysis
+│   ├── json-txt.py                  #   LabelMe JSON → YOLO TXT conversion
+│   ├── filerename.py                #   Batch file renaming
+│   ├── file_remove.py               #   XML label batch update
+│   ├── extract-data.py              #   YOLO training metrics extraction
+│   └── npz.py                       #   NPZ feature extraction → Excel
 │
-├── xgboost/                  # 模态二：临床特征分类 (XGBoost)
-│   ├── XGBOOST.py            #   贝叶斯优化的 XGBoost 训练 + 可视化
-│   └── XGBOOST-predict.py    #   模型预测 + 预处理管线保存
+├── fig_classification_segmentation/  # Classification & segmentation result figures
+├── fig_clinical_experiments/         # Clinical experiment figures
+├── fig_paper/                        # Paper figures (architecture, overview)
 │
-├── yolo_seg/                 # 模态三：超声图像语义分割 (YOLOv11-Seg)
-│   ├── train.py              #   YOLO 分割模型训练
-│   ├── predict.py            #   YOLO 分割推理
-│   ├── data_exter.py         #   从分割掩膜提取目标区域
-│   └── lianghua.py           #   交互式 HSV 阈值量化分析
-│
-├── fusion/                   # 多模态融合
-│   └── data_confuse.py       #   置信度加权融合 + 随机森林融合
-│
-├── analysis/                 # 特征分析与可视化
-│   ├── data_relavate.py      #   特征相关性分析 (点二列/XGBoost/琴谱图)
-│   └── confuse.py            #   混淆矩阵可视化
-│
-├── segmentation_post/        # 分割后处理与量化测量
-│   ├── area_calculate.py     #   病变区域面积计算
-│   ├── length_calculate.py   #   骨架法裂缝/病变长度测量
-│   └── width_calculate.py    #   PCA 法裂缝/病变宽度测量
-│
-├── utils/                    # 数据处理工具
-│   ├── excle_process.py      #   Excel 数据匹配
-│   ├── extract-data.py       #   从 YOLO 训练结果提取指标
-│   ├── file_remove.py        #   XML 标注文件名批量更新
-│   ├── filerename.py         #   批量文件重命名
-│   ├── json-txt.py           #   LabelMe JSON → YOLO TXT 格式转换
-│   ├── npz.py                #   NPZ 特征提取 → Excel
-│   └── image_require.py      #   视频帧截取
-│
-├── data/                     # 示例数据 (不含原始数据集)
-│   ├── data.xlsx             #   临床特征数据
-│   ├── results.csv           #   训练结果
-│   ├── 分割数据.csv           #   分割评估数据
-│   └── ...
-│
-└── figures/                  # 论文结果图
-    ├── 不同模态的分类模型精度对比图.png
-    ├── 分割效果图展示.png
-    ├── 混淆矩阵-XGBOOST.png
-    ├── 相关性热力图.png
-    └── ...
+├── requirements.txt
+├── README.md
+└── .gitignore
 ```
 
-## 研究方法
+## Key Results
 
-### 三模态融合诊断框架
+### Ablation Study (8 Groups)
 
-| 模态 | 方法 | 输入 | 用途 |
-|------|------|------|------|
-| 模态一 | EfficientNet-B0 | 超声图像 | 图像级良恶性分类 |
-| 模态二 | XGBoost + 贝叶斯优化 | 临床特征 (LV-GLS, LVEF, etc.) | 临床指标分类 |
-| 模态三 | YOLOv11-Seg | 超声图像 | 病灶区域语义分割 |
+| Group | DFF | IEMA | SCDown | mIoU | Params (M) | GFLOPs |
+|-------|-----|------|--------|------|------------|--------|
+| N1 | | | | 77.40 | 2.01 | 5.60 |
+| N2 | ✓ | | | 80.35 | 2.32 | 5.95 |
+| N3 | | ✓ | | 79.82 | 2.28 | 5.88 |
+| N4 | | | ✓ | 79.56 | 2.05 | 5.52 |
+| N5 | ✓ | ✓ | | 82.17 | 2.59 | 6.23 |
+| N8 | ✓ | ✓ | ✓ | **85.25** | **2.08** | **5.80** |
 
-多模态预测结果通过置信度加权融合和随机森林融合得到最终诊断。
+Three-component synergy delivers **+7.85pp mIoU** with fewer parameters than two-component variants.
 
-## 环境配置
+### Multi-Strategy Comparison
+
+| Strategy | Train AUC | Val AUC | Sensitivity | Specificity |
+|----------|-----------|---------|-------------|-------------|
+| GLS (clinical only) | 0.7039 | 0.6705 | 0.7125 | 0.7208 |
+| TR-Net (image only) | 0.8503 | 0.8181 | 0.7660 | 0.7720 |
+| **HTR-Net (fusion)** | **0.8800** | **0.8478** | **0.8680** | 0.7480 |
+
+### Benchmark Comparison
+
+HTR-Net outperforms four published multimodal models (MultimodalCKDModel, CHAIDDecisionTree, BreastNoduleModel, HaTU-Net) on all 7 evaluation metrics.
+
+## Setup
 
 ```bash
-# 创建虚拟环境
-conda create -n cancer_detect python=3.10
-conda activate cancer_detect
-
-# 安装依赖
 pip install -r requirements.txt
 ```
 
-## 数据集
+## Dependencies
 
-本项目使用甲状腺/乳腺超声图像数据集和临床特征数据。
+- PyTorch / torchvision — deep learning framework
+- Ultralytics — YOLO object detection & segmentation
+- XGBoost — gradient boosting classifier
+- scikit-learn — ML utilities
+- OpenCV — image processing
+- SHAP — model interpretability
+- scikit-optimize — Bayesian hyperparameter tuning
 
-### 数据获取
-- 超声图像数据集：约 14,000+ 张，包含多视角超声图像
-- 临床特征数据：包含年龄、LV-GLS、LVEF、LAVImax 等指标
-- 原始数据集因涉及医院隐私数据，不直接包含在代码仓库中
-- 示例数据文件位于 `data/` 目录
+## Dataset & Model Weights
 
-### 数据准备
+- **Ultrasound images**: ~14,000+ multi-view ultrasound images from CAMUS public dataset and 4 medical centers (350 clinical cases). Raw images are excluded from this repository due to patient privacy and size constraints.
+- **Trained model weights** (`.pth`, `.pkl`, `.onnx`) are available upon request or via cloud storage link.
+- Sample data and all training/evaluation code are fully provided for reproducibility.
+
+## Citation
+
+If you find this work useful, please cite:
+
+```bibtex
+@article{xue2025htrnet,
+  title={HTR-Net: A Multi-Dimensional Fusion Framework for Ultrasound Image Tumor Diagnosis},
+  author={Xue, Bowen},
+  journal={Under review at IEEE BIBM 2026},
+  year={2025}
+}
 ```
-data/
-├── train/
-│   ├── label0/      # 良性样本
-│   └── label1/      # 恶性样本
-└── val/
-    ├── label0/
-    └── label1/
-```
-
-## 使用说明
-
-### 1. 图像分类 (EfficientNet)
-```bash
-cd efficientnet
-python train.py --data-path ./data/train --epochs 100 --batch-size 16
-python predict.py   # 批量预测
-```
-
-### 2. 临床特征分类 (XGBoost)
-```bash
-cd xgboost
-python XGBOOST.py           # 训练 + 可视化
-python XGBOOST-predict.py   # 预测新数据
-```
-
-### 3. 语义分割 (YOLOv11)
-```bash
-cd yolo_seg
-python train.py     # 训练分割模型
-python predict.py   # 分割推理
-```
-
-### 4. 多模态融合
-```bash
-cd fusion
-python data_confuse.py
-```
-
-## 模型权重
-
-训练好的模型权重文件因体积较大未包含在仓库中：
-
-| 模型 | 文件 | 说明 |
-|------|------|------|
-| EfficientNet | model-99.pth | 图像分类模型 |
-| XGBoost | final_model.pkl | 临床特征分类模型 |
-| YOLO | best.pt | 语义分割模型 |
-| ONNX | classify-test.onnx | 分类模型 ONNX 导出 |
-
-## 依赖库
-
-- **PyTorch / torchvision**: 深度学习框架
-- **Ultralytics**: YOLO 目标检测与分割
-- **XGBoost**: 梯度提升树分类器
-- **scikit-learn**: 机器学习工具
-- **OpenCV**: 图像处理
-- **SHAP**: 特征重要性可解释性分析
-- **scikit-optimize**: 贝叶斯超参数优化
 
 ## License
 
-学术研究用途。数据集涉及患者隐私，未经授权不得分发。
+For academic research purposes only. Clinical data involves patient privacy and may not be redistributed without authorization.
