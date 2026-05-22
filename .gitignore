@@ -76,3 +76,4 @@ ultralytics-main-cancer/pyproject.toml
 # ===== OS =====
 .DS_Store
 Thumbs.db
+PPT/
